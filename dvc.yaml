@@ -1,0 +1,54 @@
+stages:
+  prepare_data:
+    cmd: python src/prepare_data.py
+    deps:
+      - src/prepare_data.py
+      - data/dataset.csv
+    outs:
+      - data/processed/train.csv
+      - data/processed/test.csv
+    params:
+      - configs/config.yaml:
+          - training.test_size
+          - training.random_state
+          - training.stratify
+          - data.target_column
+
+  train:
+    cmd: python src/train.py
+    deps:
+      - src/train.py
+      - data/processed/train.csv
+      - data/processed/test.csv
+      - configs/config.yaml
+    outs:
+      - models/random_forest_v1_baseline.pkl
+      - models/random_forest_v2_deep.pkl
+      - models/random_forest_v3_regularised.pkl
+      - models/run_ids.txt
+    params:
+      - configs/config.yaml:
+          - model.n_estimators
+          - model.max_depth
+          - model.min_samples_split
+          - model.random_state
+
+  evaluate:
+    cmd: python src/evaluate.py
+    deps:
+      - src/evaluate.py
+      - models/random_forest_v1_baseline.pkl
+      - models/random_forest_v2_deep.pkl
+      - models/random_forest_v3_regularised.pkl
+      - data/processed/test.csv
+    outs:
+      - reports/roc_curve_random_forest_v1_baseline.png
+      - reports/roc_curve_random_forest_v2_deep.png
+      - reports/roc_curve_random_forest_v3_regularised.png
+
+  register:
+    cmd: python src/register_models.py
+    deps:
+      - src/register_models.py
+      - models/run_ids.txt
+      - configs/config.yaml
