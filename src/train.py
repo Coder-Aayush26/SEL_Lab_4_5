@@ -329,16 +329,29 @@ def main():
     print(f"DVC/MD5 hash : {dvc_hash}")
     print(f"Dataset shape: {X.shape}")
 
-    data = load_breast_cancer()
-    feature_names = data.feature_names
+    target_col = config["data"].get("target_column", "target")
+    feature_names = [col for col in df.columns if col != target_col]
 
-    print("\nSplitting dataset ...")
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y,
-        test_size=config["training"]["test_size"],
-        random_state=config["training"]["random_state"],
-        stratify=y if config["training"].get("stratify", True) else None,
-    )
+    # If processed files exist (from DVC prepare_data stage), use them
+    train_csv = repo_root / "data" / "processed" / "train.csv"
+    test_csv = repo_root / "data" / "processed" / "test.csv"
+
+    if train_csv.exists() and test_csv.exists():
+        print(f"\nUsing pre-processed splits from {train_csv.parent} ...")
+        train_df = pd.read_csv(train_csv)
+        test_df = pd.read_csv(test_csv)
+        X_train = train_df.drop(columns=[target_col]).values
+        y_train = train_df[target_col].values
+        X_test = test_df.drop(columns=[target_col]).values
+        y_test = test_df[target_col].values
+    else:
+        print("\nSplitting dataset ...")
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y,
+            test_size=config["training"]["test_size"],
+            random_state=config["training"]["random_state"],
+            stratify=y if config["training"].get("stratify", True) else None,
+        )
     print(f"Train: {len(X_train)}  |  Test: {len(X_test)}")
 
     results = []
