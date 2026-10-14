@@ -1,0 +1,4 @@
+[core]
+    remote = localremote
+['remote "localremote"']
+    url = d:\SEL_Lab_4_5\dvc-storage
